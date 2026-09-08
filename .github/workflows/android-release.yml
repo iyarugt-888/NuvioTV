@@ -28,6 +28,7 @@ jobs:
   release:
     name: ${{ inputs.mode }} Android TV release
     runs-on: ubuntu-latest
+    environment: release
     env:
       GH_TOKEN: ${{ github.token }}
       LEGACY_LOCAL_PROPERTIES_BASE64: ${{ secrets.LOCAL_PROPERTIES_BASE64 }}
