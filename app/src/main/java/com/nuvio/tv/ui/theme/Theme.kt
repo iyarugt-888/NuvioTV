@@ -47,6 +47,8 @@ val LocalThemePalette = staticCompositionLocalOf { ThemeColors.White }
 
 val LocalSettingsUiStyle = staticCompositionLocalOf { SettingsUiStyle.CLASSIC }
 
+val LocalEasyMode = staticCompositionLocalOf { false }
+
 val LocalNuvioFocusRingStyle = staticCompositionLocalOf {
     createFocusRingStyle(ThemeColors.Ocean)
 }
@@ -59,6 +61,7 @@ fun NuvioTheme(
     amoledMode: Boolean = false,
     amoledSurfacesMode: Boolean = false,
     settingsUiStyle: SettingsUiStyle = SettingsUiStyle.CLASSIC,
+    easyMode: Boolean = false,
     customThemeColors: CustomThemeColors = CustomThemeColors.Default,
     content: @Composable () -> Unit
 ) {
@@ -68,10 +71,11 @@ fun NuvioTheme(
     val focusRingStyle = createFocusRingStyle(palette)
     val colorScheme = NuvioColorScheme(
         palette = palette,
-        amoledMode = amoledMode,
-        amoledSurfacesMode = amoledSurfacesMode
+        amoledMode = amoledMode || easyMode,
+        amoledSurfacesMode = amoledSurfacesMode || easyMode,
+        highContrast = easyMode
     )
-    val typography = buildNuvioTypography(getFontFamily(appFont))
+    val typography = buildNuvioTypography(getFontFamily(appFont), easyMode = easyMode)
     val textStyles = buildNuvioTextStyles(typography)
 
     val materialColorScheme = darkColorScheme(
@@ -105,6 +109,7 @@ fun NuvioTheme(
         LocalAppTheme provides appTheme,
         LocalThemePalette provides palette,
         LocalSettingsUiStyle provides settingsUiStyle,
+        LocalEasyMode provides easyMode,
         LocalNuvioFocusRingStyle provides focusRingStyle
     ) {
         MaterialTheme(
@@ -186,4 +191,9 @@ object NuvioTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalSettingsUiStyle.current
+
+    val easyMode: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalEasyMode.current
 }

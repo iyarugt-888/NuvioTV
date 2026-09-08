@@ -56,99 +56,122 @@ data class NuvioTextStyleTokens(
 )
 
 @OptIn(ExperimentalTvMaterial3Api::class)
-fun buildNuvioTypography(fontFamily: FontFamily): Typography = Typography(
-    displayLarge = TextStyle(
+private fun TextStyle.scaleForEasyMode(scale: Float): TextStyle =
+    copy(fontSize = fontSize * scale, lineHeight = lineHeight * scale)
+
+@OptIn(ExperimentalTvMaterial3Api::class)
+fun buildNuvioTypography(fontFamily: FontFamily, easyMode: Boolean = false): Typography {
+    val base = Typography(
+        displayLarge = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 48.sp,
         lineHeight = 56.sp,
         letterSpacing = (-0.5).sp
     ),
-    displayMedium = TextStyle(
+        displayMedium = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 36.sp,
         lineHeight = 44.sp,
         letterSpacing = 0.sp
     ),
-    headlineLarge = TextStyle(
+        headlineLarge = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 28.sp,
         lineHeight = 36.sp,
         letterSpacing = 0.sp
     ),
-    headlineMedium = TextStyle(
+        headlineMedium = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 24.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.sp
     ),
-    titleLarge = TextStyle(
+        titleLarge = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 20.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp
     ),
-    titleMedium = TextStyle(
+        titleMedium = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.15.sp
     ),
-    titleSmall = TextStyle(
+        titleSmall = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
-    bodyLarge = TextStyle(
+        bodyLarge = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
-    bodyMedium = TextStyle(
+        bodyMedium = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp
     ),
-    bodySmall = TextStyle(
+        bodySmall = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.4.sp
     ),
-    labelLarge = TextStyle(
+        labelLarge = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
-    labelMedium = TextStyle(
+        labelMedium = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     ),
-    labelSmall = TextStyle(
+        labelSmall = TextStyle(
         fontFamily = fontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 10.sp,
         lineHeight = 14.sp,
         letterSpacing = 0.5.sp
     )
-)
+    )
+    if (!easyMode) return base
+    val scale = 1.18f
+    return Typography(
+        displayLarge = base.displayLarge.scaleForEasyMode(scale),
+        displayMedium = base.displayMedium.scaleForEasyMode(scale),
+        headlineLarge = base.headlineLarge.scaleForEasyMode(scale),
+        headlineMedium = base.headlineMedium.scaleForEasyMode(scale),
+        titleLarge = base.titleLarge.scaleForEasyMode(scale),
+        titleMedium = base.titleMedium.scaleForEasyMode(scale),
+        titleSmall = base.titleSmall.scaleForEasyMode(scale),
+        bodyLarge = base.bodyLarge.scaleForEasyMode(scale),
+        bodyMedium = base.bodyMedium.scaleForEasyMode(scale),
+        bodySmall = base.bodySmall.scaleForEasyMode(scale),
+        labelLarge = base.labelLarge.scaleForEasyMode(scale),
+        labelMedium = base.labelMedium.scaleForEasyMode(scale),
+        labelSmall = base.labelSmall.scaleForEasyMode(scale)
+    )
+}
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 val NuvioTypography = buildNuvioTypography(InterFamily)

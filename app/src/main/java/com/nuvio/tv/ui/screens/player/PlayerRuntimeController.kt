@@ -105,6 +105,7 @@ class PlayerRuntimeController(
 
     /** Resolved once so every `context.getString(...)` here follows the app language. */
     internal val context: Context = context.withAppLocale()
+    internal var easyModeEnabled: Boolean = false
 
     companion object {
         internal const val TAG = "PlayerViewModel"

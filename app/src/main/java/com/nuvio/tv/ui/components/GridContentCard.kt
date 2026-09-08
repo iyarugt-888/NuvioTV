@@ -76,19 +76,31 @@ fun GridContentCard(
     onLongPress: (() -> Unit)? = null,
     onFocused: () -> Unit = {}
 ) {
-    val cardShape = remember(posterCardStyle.cornerRadius) { RoundedCornerShape(posterCardStyle.cornerRadius) }
+    val easyMode = NuvioTheme.easyMode
+    val effectivePosterCardStyle = remember(posterCardStyle, easyMode) {
+        if (!easyMode) {
+            posterCardStyle
+        } else {
+            posterCardStyle.copy(
+                width = posterCardStyle.width * 1.2f,
+                height = posterCardStyle.height * 1.2f,
+                focusedBorderWidth = posterCardStyle.focusedBorderWidth * 1.2f
+            )
+        }
+    }
+    val cardShape = remember(effectivePosterCardStyle.cornerRadius) { RoundedCornerShape(effectivePosterCardStyle.cornerRadius) }
     val cardDepthStyle = LocalCardDepthStyle.current
     val density = LocalDensity.current
 
     // Derive card height from item's posterShape aspect ratio while keeping width from posterCardStyle.
     // This ensures grids and rows display landscape/square shapes correctly.
     val cardHeight = when (item.posterShape) {
-        PosterShape.POSTER -> posterCardStyle.height
-        PosterShape.LANDSCAPE -> posterCardStyle.width / PosterShape.LANDSCAPE.aspectRatio()
-        PosterShape.SQUARE -> posterCardStyle.width
+        PosterShape.POSTER -> effectivePosterCardStyle.height
+        PosterShape.LANDSCAPE -> effectivePosterCardStyle.width / PosterShape.LANDSCAPE.aspectRatio()
+        PosterShape.SQUARE -> effectivePosterCardStyle.width
     }
 
-    val requestWidthPx = remember(density, posterCardStyle.width) { with(density) { posterCardStyle.width.roundToPx() }.coerceAtLeast(1) }
+    val requestWidthPx = remember(density, effectivePosterCardStyle.width) { with(density) { effectivePosterCardStyle.width.roundToPx() }.coerceAtLeast(1) }
     val requestHeightPx = remember(density, cardHeight) { with(density) { cardHeight.roundToPx() }.coerceAtLeast(1) }
     var isFocused by remember { mutableStateOf(false) }
     var longPressTriggered by remember { mutableStateOf(false) }
@@ -97,7 +109,7 @@ fun GridContentCard(
 
     Column(
         modifier = modifier
-            .width(posterCardStyle.width)
+            .width(effectivePosterCardStyle.width)
             .recompositionHighlighter()
     ) {
         Card(
@@ -109,7 +121,7 @@ fun GridContentCard(
                 }
             },
             modifier = Modifier
-                .width(posterCardStyle.width)
+                .width(effectivePosterCardStyle.width)
                 .height(cardHeight)
                 .then(
                     if (focusRequester != null) Modifier.focusRequester(focusRequester)
@@ -169,11 +181,11 @@ fun GridContentCard(
             ),
             border = CardDefaults.border(
                 focusedBorder = Border(
-                    border = NuvioTheme.focusRing.border(posterCardStyle.focusedBorderWidth),
+                    border = NuvioTheme.focusRing.border(effectivePosterCardStyle.focusedBorderWidth),
                     shape = cardShape
                 )
             ),
-            scale = CardDefaults.scale(focusedScale = posterCardStyle.focusedScale)
+            scale = CardDefaults.scale(focusedScale = effectivePosterCardStyle.focusedScale)
         ) {
             Box(
                 modifier = Modifier
@@ -244,7 +256,7 @@ fun GridContentCard(
                             .align(Alignment.BottomCenter)
                             .fillMaxWidth()
                             .heightIn(max = cardHeight * 0.35f)
-                            .padding(horizontal = NuvioTheme.spacing.lg, vertical = 14.dp)
+                                    .padding(horizontal = NuvioTheme.spacing.lg, vertical = if (easyMode) 18.dp else 14.dp)
                     )
                 }
 
@@ -266,7 +278,7 @@ fun GridContentCard(
                 style = MaterialTheme.typography.titleMedium,
                 color = NuvioTheme.colors.TextPrimary,
                 modifier = Modifier
-                    .width(posterCardStyle.width)
+                    .width(effectivePosterCardStyle.width)
                     .padding(top = NuvioTheme.spacing.sm, start = NuvioTheme.spacing.xxs, end = NuvioTheme.spacing.xxs)
             )
         }

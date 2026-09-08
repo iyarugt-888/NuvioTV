@@ -243,7 +243,17 @@ internal fun PlayerRuntimeController.filterToVisibleAddonSubtitles(
         else -> listOfNotNull(
             style.preferredLanguage,
             style.secondaryPreferredLanguage?.takeIf { it.isNotBlank() }
-        )
+        ).let { targets ->
+            if (
+                easyModeEnabled &&
+                targets.none { PlayerSubtitleUtils.matchesLanguageCode(it, "en") } &&
+                targets.any { !PlayerSubtitleUtils.matchesLanguageCode(it, "en") }
+            ) {
+                targets + "en"
+            } else {
+                targets
+            }
+        }
     }.map { PlayerSubtitleUtils.normalizeLanguageCode(it) }
         .distinct()
 

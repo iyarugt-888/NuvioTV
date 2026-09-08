@@ -227,6 +227,7 @@ private data class MainUiPrefs(
     val fastHorizontalNavigationEnabled: Boolean = false,
     val composeHighlighterEnabled: Boolean = false,
     val settingsUiStyle: SettingsUiStyle = SettingsUiStyle.CLASSIC,
+    val easyMode: Boolean = false,
     val cardDepthStyle: CardDepthStyle = CardDepthStyle()
 )
 
@@ -489,13 +490,15 @@ open class MainActivity : ComponentActivity() {
                     layoutPreferenceDataStore.fastHorizontalNavigationEnabled,
                     layoutPreferenceDataStore.composeHighlighterEnabled,
                     themeDataStore.settingsUiStyle,
-                ) { addonSetupSkipped, smoothBringIntoView, fastHorizontalNav, composeHighlighter, settingsUiStyle ->
+                    themeDataStore.easyMode,
+                ) { addonSetupSkipped, smoothBringIntoView, fastHorizontalNav, composeHighlighter, settingsUiStyle, easyMode ->
                     MainUiPrefs(
                         addonSetupSkipped = addonSetupSkipped,
                         smoothBringIntoViewEnabled = smoothBringIntoView,
                         fastHorizontalNavigationEnabled = fastHorizontalNav,
                         composeHighlighterEnabled = composeHighlighter,
                         settingsUiStyle = settingsUiStyle,
+                        easyMode = easyMode,
                     )
                 }
                 combine(
@@ -515,6 +518,7 @@ open class MainActivity : ComponentActivity() {
                         fastHorizontalNavigationEnabled = extraPrefs.fastHorizontalNavigationEnabled,
                         composeHighlighterEnabled = extraPrefs.composeHighlighterEnabled,
                         settingsUiStyle = extraPrefs.settingsUiStyle,
+                        easyMode = extraPrefs.easyMode,
                         cardDepthStyle = cardDepthStyle
                     )
                 }
@@ -531,7 +535,8 @@ open class MainActivity : ComponentActivity() {
                 appFont = mainUiPrefs.font,
                 amoledMode = mainUiPrefs.amoledMode,
                 amoledSurfacesMode = mainUiPrefs.amoledSurfacesMode,
-                settingsUiStyle = mainUiPrefs.settingsUiStyle
+                settingsUiStyle = mainUiPrefs.settingsUiStyle,
+                easyMode = mainUiPrefs.easyMode
             ) {
                 val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
                 val bringIntoViewSpec = if (mainUiPrefs.smoothBringIntoViewEnabled) {

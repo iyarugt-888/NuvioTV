@@ -258,6 +258,21 @@ fun ThemeSettingsContent(
 
             SettingsGroupCard(
                 modifier = Modifier.fillMaxWidth(),
+                title = stringResource(R.string.appearance_accessibility),
+                subtitle = stringResource(R.string.appearance_accessibility_subtitle)
+            ) {
+                SettingsToggleRow(
+                    title = stringResource(R.string.appearance_easy_mode),
+                    subtitle = stringResource(R.string.appearance_easy_mode_subtitle),
+                    checked = uiState.easyMode,
+                    onToggle = {
+                        viewModel.onEvent(ThemeSettingsEvent.ToggleEasyMode(!uiState.easyMode))
+                    }
+                )
+            }
+
+            SettingsGroupCard(
+                modifier = Modifier.fillMaxWidth(),
                 title = stringResource(R.string.appearance_settings_style),
                 subtitle = stringResource(R.string.appearance_settings_style_subtitle)
             ) {

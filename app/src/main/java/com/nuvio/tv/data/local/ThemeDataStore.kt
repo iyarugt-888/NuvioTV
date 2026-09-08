@@ -33,6 +33,7 @@ class ThemeDataStore @Inject constructor(
     private val amoledModeKey = booleanPreferencesKey("amoled_mode")
     private val amoledSurfacesModeKey = booleanPreferencesKey("amoled_surfaces_mode")
     private val settingsUiStyleKey = stringPreferencesKey("settings_ui_style")
+    private val easyModeKey = booleanPreferencesKey("easy_mode")
 
     val themeSelection: Flow<ThemeSelection> = profileManager.activeProfileId.flatMapLatest { pid ->
         factory.get(pid, FEATURE).data.map { prefs ->
@@ -75,6 +76,12 @@ class ThemeDataStore @Inject constructor(
                 SettingsUiStyle.CLASSIC
             }
         }
+
+        val easyMode: Flow<Boolean> = profileManager.activeProfileId.flatMapLatest { pid ->
+            factory.get(pid, FEATURE).data.map { prefs ->
+                prefs[easyModeKey] ?: false
+            }
+        }
     }
 
     suspend fun setTheme(theme: AppTheme) {
@@ -114,6 +121,12 @@ class ThemeDataStore @Inject constructor(
     suspend fun setSettingsUiStyle(style: SettingsUiStyle) {
         store().edit { prefs ->
             prefs[settingsUiStyleKey] = style.name
+        }
+    }
+
+    suspend fun setEasyMode(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[easyModeKey] = enabled
         }
     }
 }

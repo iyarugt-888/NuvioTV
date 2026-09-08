@@ -32,6 +32,7 @@ import com.nuvio.tv.data.local.StreamAutoPlayMode
 import com.nuvio.tv.data.local.StreamBadgeSettingsDataStore
 import com.nuvio.tv.data.local.StreamLinkCacheDataStore
 import com.nuvio.tv.data.local.BingeGroupCacheDataStore
+import com.nuvio.tv.data.local.ThemeDataStore
 import com.nuvio.tv.domain.model.AddonStreams
 import com.nuvio.tv.domain.model.Meta
 import com.nuvio.tv.domain.model.Stream
@@ -76,6 +77,7 @@ class StreamScreenViewModel @Inject constructor(
     private val pluginManager: PluginManager,
     private val metaRepository: MetaRepository,
     private val playerSettingsDataStore: PlayerSettingsDataStore,
+    private val themeDataStore: ThemeDataStore,
     private val streamLinkCacheDataStore: StreamLinkCacheDataStore,
     private val streamBadgePresentation: StreamBadgePresentation,
     streamBadgeSettingsDataStore: StreamBadgeSettingsDataStore,
@@ -106,6 +108,7 @@ class StreamScreenViewModel @Inject constructor(
     private var streamBadgePresentationRequestId = 0L
     private var badgedAddonNames: Set<String> = emptySet()
     private var playbackMetaVideos: List<Video>? = null
+    private var easyModeEnabled: Boolean = false
 
     private val embeddedStreamGroupName: String by lazy {
         context.getString(R.string.stream_embedded_group)
@@ -235,6 +238,11 @@ class StreamScreenViewModel @Inject constructor(
                     externalPlaybackTracker.updateAutoNextOverlayStatus(message, progress)
                 }
         }
+        viewModelScope.launch {
+            themeDataStore.easyMode
+                .distinctUntilChanged()
+                .collectLatest { easyModeEnabled = it }
+        }
         if (manualSelection) {
             // Returning from a playback error: keep the user on stream selection.
             autoPlayHandledForSession = true
@@ -327,7 +335,7 @@ class StreamScreenViewModel @Inject constructor(
         playerPreference: PlayerPreference,
         streamAutoPlayMode: StreamAutoPlayMode
     ): Boolean {
-        return streamAutoPlayMode != StreamAutoPlayMode.MANUAL
+        return easyModeEnabled || streamAutoPlayMode != StreamAutoPlayMode.MANUAL
     }
 
     private fun loadStreams(forceRefresh: Boolean = false) {
@@ -346,6 +354,11 @@ class StreamScreenViewModel @Inject constructor(
         streamLoadJob = newScope.launch {
             streamLoadCompleted = false
             val playerSettings = playerSettingsDataStore.playerSettings.first()
+            val effectiveAutoPlayMode = if (easyModeEnabled && playerSettings.streamAutoPlayMode == StreamAutoPlayMode.MANUAL) {
+                StreamAutoPlayMode.FIRST_STREAM
+            } else {
+                playerSettings.streamAutoPlayMode
+            }
             if (manualSelection) {
                 directAutoPlayModeInitializedForSession = true
                 directAutoPlayFlowEnabledForSession = false
@@ -353,7 +366,7 @@ class StreamScreenViewModel @Inject constructor(
             } else if (!directAutoPlayModeInitializedForSession) {
                 directAutoPlayFlowEnabledForSession = shouldUseDirectAutoPlayFlow(
                     playerPreference = playerSettings.playerPreference,
-                    streamAutoPlayMode = playerSettings.streamAutoPlayMode
+                    streamAutoPlayMode = effectiveAutoPlayMode
                 )
                 // In MANUAL mode, still enable direct auto-play if a persisted
                 // binge group exists - same behavior as playNextEpisode in the player.
@@ -370,7 +383,7 @@ class StreamScreenViewModel @Inject constructor(
             }
 
             if (
-                playerSettings.streamAutoPlayMode == StreamAutoPlayMode.REGEX_MATCH &&
+                effectiveAutoPlayMode == StreamAutoPlayMode.REGEX_MATCH &&
                 !StreamAutoPlayPolicy.isRegexSelectionConfigured(playerSettings.streamAutoPlayRegex)
             ) {
                 directAutoPlayFlowEnabledForSession = false
@@ -505,14 +518,15 @@ class StreamScreenViewModel @Inject constructor(
                 } else {
                     StreamAutoPlaySelector.selectAutoPlayStream(
                         streams = allStreams,
-                        mode = playerSettings.streamAutoPlayMode,
+                    mode = effectiveAutoPlayMode,
                         regexPattern = playerSettings.streamAutoPlayRegex,
                         source = playerSettings.streamAutoPlaySource,
                         installedAddonNames = installedAddonOrder.toSet(),
                         selectedAddons = playerSettings.streamAutoPlaySelectedAddons,
                         selectedPlugins = playerSettings.streamAutoPlaySelectedPlugins,
-                        preferredBingeGroup = persistedBingeGroup,
-                        preferBingeGroupInSelection = persistedBingeGroup != null
+                    prefer1080p = easyModeEnabled,
+                    preferredBingeGroup = persistedBingeGroup,
+                    preferBingeGroupInSelection = persistedBingeGroup != null
                     )
                 }
                 if (selectedAutoPlayStream != null) {
@@ -691,12 +705,13 @@ class StreamScreenViewModel @Inject constructor(
                                 val allStreams = orderedStreams.flatMap { it.streams }
                                 val earlyMatch = StreamAutoPlaySelector.selectAutoPlayStream(
                                     streams = allStreams,
-                                    mode = playerSettings.streamAutoPlayMode,
+                                    mode = effectiveAutoPlayMode,
                                     regexPattern = playerSettings.streamAutoPlayRegex,
                                     source = playerSettings.streamAutoPlaySource,
                                     installedAddonNames = installedAddonOrder.toSet(),
                                     selectedAddons = playerSettings.streamAutoPlaySelectedAddons,
                                     selectedPlugins = playerSettings.streamAutoPlaySelectedPlugins,
+                                    prefer1080p = easyModeEnabled,
                                     preferredBingeGroup = persistedBingeGroup,
                                     preferBingeGroupInSelection = true,
                                     bingeGroupOnly = true
@@ -1679,7 +1694,9 @@ class StreamScreenViewModel @Inject constructor(
         updateUiStateIfChanged {
             it.copy(
                 directAutoPlayMessage = if (showLoadingStatus) {
-                    context.getString(R.string.subtitle_loading_addon)
+                    context.getString(
+                        if (easyModeEnabled) R.string.subtitle_loading_easy else R.string.subtitle_loading_addon
+                    )
                 } else {
                     null
                 }
@@ -1720,12 +1737,29 @@ class StreamScreenViewModel @Inject constructor(
                 }
             }
 
-            if (filtered.isEmpty()) {
+            val easyModeFallback = easyModeEnabled &&
+                preferredLanguages.none {
+                    com.nuvio.tv.ui.screens.player.PlayerSubtitleUtils.matchesLanguageCode("en", it)
+                }
+            val finalFiltered = if (filtered.isEmpty() && easyModeFallback) {
+                if (showLoadingStatus) {
+                    updateUiStateIfChanged {
+                        it.copy(directAutoPlayMessage = context.getString(R.string.player_loading_subtitles_retrying_english))
+                    }
+                }
+                allSubtitles.filter { subtitle ->
+                    com.nuvio.tv.ui.screens.player.PlayerSubtitleUtils.matchesLanguageCode(subtitle.lang, "en")
+                }
+            } else {
+                filtered
+            }
+
+            if (finalFiltered.isEmpty()) {
                 Log.d(TAG, "No subtitles found for preferred languages: $preferredLanguages")
                 null
             } else {
-                Log.d(TAG, "Found ${filtered.size} subtitles for external player, downloading to cache...")
-                val inputs = filtered.map { subtitle ->
+                Log.d(TAG, "Found ${finalFiltered.size} subtitles for external player, downloading to cache...")
+                val inputs = finalFiltered.map { subtitle ->
                     com.nuvio.tv.core.player.SubtitleInput(
                         url = subtitle.url,
                         name = "${subtitle.getDisplayLanguage()} - ${subtitle.addonName}",
