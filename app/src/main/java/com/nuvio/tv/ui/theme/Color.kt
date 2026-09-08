@@ -102,12 +102,13 @@ data class NuvioContrastPair(
 class NuvioColorScheme(
     palette: ThemeColorPalette,
     amoledMode: Boolean = false,
-    amoledSurfacesMode: Boolean = false
+    amoledSurfacesMode: Boolean = false,
+    highContrast: Boolean = false
 ) {
     private val pureBlack = NuvioPrimitives.black
-    private val pureBlackSurfaces = amoledMode && amoledSurfacesMode
+    private val pureBlackSurfaces = highContrast || (amoledMode && amoledSurfacesMode)
 
-    val Background = if (amoledMode) pureBlack else palette.background
+    val Background = if (amoledMode || highContrast) pureBlack else palette.background
     val BackgroundElevated = if (pureBlackSurfaces) pureBlack else palette.backgroundElevated
     val BackgroundCard = if (pureBlackSurfaces) pureBlack else palette.backgroundCard
     val Surface = if (pureBlackSurfaces) pureBlack else palette.surface
@@ -118,7 +119,7 @@ class NuvioColorScheme(
     val Menu = if (pureBlackSurfaces) pureBlack else palette.menu
     val Modal = if (pureBlackSurfaces) pureBlack else palette.modal
     val PlayerOverlay = palette.playerOverlay
-    val Divider = NuvioPrimitives.neutral750
+    val Divider = if (highContrast) NuvioPrimitives.neutral650 else NuvioPrimitives.neutral750
 
     val Primary = NuvioPrimitives.neutral500
     val PrimaryVariant = NuvioPrimitives.neutral650
@@ -129,8 +130,8 @@ class NuvioColorScheme(
     val OnSecondaryVariant = palette.onSecondaryVariant
 
     val TextPrimary = NuvioPrimitives.white
-    val TextSecondary = NuvioPrimitives.neutral400
-    val TextTertiary = NuvioPrimitives.neutral600
+    val TextSecondary = if (highContrast) NuvioPrimitives.neutral200 else NuvioPrimitives.neutral400
+    val TextTertiary = if (highContrast) NuvioPrimitives.neutral400 else NuvioPrimitives.neutral600
     val TextDisabled = NuvioPrimitives.neutral700
     val TextInverse = NuvioPrimitives.neutral925
 
@@ -159,10 +160,10 @@ class NuvioColorScheme(
     val VideoControlsScrim = NuvioPrimitives.black.copy(alpha = 0.72f)
     val PosterFallback = BackgroundCard
 
-    val DisabledContainer = SurfaceVariant.copy(alpha = 0.42f)
-    val DisabledContent = TextDisabled
-    val DisabledBorder = Border.copy(alpha = 0.48f)
-    val DisabledOverlay = NuvioPrimitives.black.copy(alpha = 0.42f)
+    val DisabledContainer = SurfaceVariant.copy(alpha = if (highContrast) 0.7f else 0.42f)
+    val DisabledContent = if (highContrast) NuvioPrimitives.neutral500 else TextDisabled
+    val DisabledBorder = Border.copy(alpha = if (highContrast) 0.72f else 0.48f)
+    val DisabledOverlay = NuvioPrimitives.black.copy(alpha = if (highContrast) 0.56f else 0.42f)
 
     val surfaces = NuvioSurfaceColors(
         background = Background,

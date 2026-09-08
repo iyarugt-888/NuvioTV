@@ -35,6 +35,7 @@ data class ThemeSettingsUiState(
     val availableFonts: List<AppFont> = AppFont.entries.toList(),
     val amoledMode: Boolean = false,
     val amoledSurfacesMode: Boolean = false,
+    val easyMode: Boolean = false,
     val settingsUiStyle: SettingsUiStyle = SettingsUiStyle.CLASSIC,
     val availableSettingsUiStyles: List<SettingsUiStyle> = SettingsUiStyle.entries.toList()
 )
@@ -45,6 +46,7 @@ sealed class ThemeSettingsEvent {
     data class SelectFont(val font: AppFont) : ThemeSettingsEvent()
     data class ToggleAmoledMode(val enabled: Boolean) : ThemeSettingsEvent()
     data class ToggleAmoledSurfacesMode(val enabled: Boolean) : ThemeSettingsEvent()
+    data class ToggleEasyMode(val enabled: Boolean) : ThemeSettingsEvent()
     data class SelectSettingsUiStyle(val style: SettingsUiStyle) : ThemeSettingsEvent()
     data object DismissAppIconFailure : ThemeSettingsEvent()
 }
@@ -125,6 +127,15 @@ class ThemeSettingsViewModel @Inject constructor(
                 }
         }
         viewModelScope.launch {
+            themeDataStore.easyMode
+                .distinctUntilChanged()
+                .collectLatest { enabled ->
+                    _uiState.update { state ->
+                        if (state.easyMode == enabled) state else state.copy(easyMode = enabled)
+                    }
+                }
+        }
+        viewModelScope.launch {
             themeDataStore.settingsUiStyle
                 .distinctUntilChanged()
                 .collectLatest { style ->
@@ -146,6 +157,7 @@ class ThemeSettingsViewModel @Inject constructor(
             is ThemeSettingsEvent.SelectFont -> selectFont(event.font)
             is ThemeSettingsEvent.ToggleAmoledMode -> setAmoledMode(event.enabled)
             is ThemeSettingsEvent.ToggleAmoledSurfacesMode -> setAmoledSurfacesMode(event.enabled)
+            is ThemeSettingsEvent.ToggleEasyMode -> setEasyMode(event.enabled)
             is ThemeSettingsEvent.SelectSettingsUiStyle -> selectSettingsUiStyle(event.style)
             ThemeSettingsEvent.DismissAppIconFailure -> appIconManager.clearFailure()
         }
@@ -187,6 +199,13 @@ class ThemeSettingsViewModel @Inject constructor(
         if (_uiState.value.amoledSurfacesMode == enabled) return
         viewModelScope.launch {
             themeDataStore.setAmoledSurfacesMode(enabled)
+        }
+    }
+
+    private fun setEasyMode(enabled: Boolean) {
+        if (_uiState.value.easyMode == enabled) return
+        viewModelScope.launch {
+            themeDataStore.setEasyMode(enabled)
         }
     }
 

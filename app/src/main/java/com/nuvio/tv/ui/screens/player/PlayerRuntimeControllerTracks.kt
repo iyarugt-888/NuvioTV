@@ -1186,7 +1186,13 @@ internal fun PlayerRuntimeController.subtitleLanguageTargets(): List<String> {
     val preferred = _uiState.value.subtitleStyle.preferredLanguage.lowercase()
     if (preferred == "none") return emptyList()
     val secondary = _uiState.value.subtitleStyle.secondaryPreferredLanguage?.lowercase()
-    return listOfNotNull(preferred, secondary)
+    val fallbackEnglish = "en".takeIf {
+        easyModeEnabled &&
+            !PlayerSubtitleUtils.matchesLanguageCode(preferred, "en") &&
+            secondary?.let { language -> !PlayerSubtitleUtils.matchesLanguageCode(language, "en") } != false
+    }
+    return listOfNotNull(preferred, secondary, fallbackEnglish)
+        .distinct()
 }
 
 internal fun PlayerRuntimeController.findBestInternalSubtitleTrackIndex(

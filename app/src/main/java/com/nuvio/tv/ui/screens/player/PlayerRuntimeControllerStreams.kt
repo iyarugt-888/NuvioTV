@@ -1630,7 +1630,8 @@ internal fun PlayerRuntimeController.playNextEpisode(userInitiated: Boolean = fa
             val shouldAutoSelectInManualMode =
                 playerSettings.streamAutoPlayMode == StreamAutoPlayMode.MANUAL &&
                     (
-                        playerSettings.streamAutoPlayNextEpisodeEnabled ||
+                        easyModeEnabled ||
+                            playerSettings.streamAutoPlayNextEpisodeEnabled ||
                             playerSettings.streamAutoPlayPreferBingeGroupForNextEpisode
                         )
             val bingeGroupOnlyManualMode =
@@ -1696,6 +1697,7 @@ internal fun PlayerRuntimeController.playNextEpisode(userInitiated: Boolean = fa
                     installedAddonNames = installedAddonOrder.toSet(),
                     selectedAddons = effectiveSelectedAddons,
                     selectedPlugins = effectiveSelectedPlugins,
+                    prefer1080p = easyModeEnabled,
                     preferredBingeGroup = if (playerSettings.streamAutoPlayPreferBingeGroupForNextEpisode) {
                         currentStreamBingeGroup
                     } else {
@@ -1718,6 +1720,7 @@ internal fun PlayerRuntimeController.playNextEpisode(userInitiated: Boolean = fa
                     installedAddonNames = installedAddonOrder.toSet(),
                     selectedAddons = effectiveSelectedAddons,
                     selectedPlugins = effectiveSelectedPlugins,
+                    prefer1080p = easyModeEnabled,
                     preferredBingeGroup = currentStreamBingeGroup,
                     preferBingeGroupInSelection = true,
                     bingeGroupOnly = true

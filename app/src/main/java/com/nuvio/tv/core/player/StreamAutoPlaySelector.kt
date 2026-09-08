@@ -53,6 +53,7 @@ object StreamAutoPlaySelector {
         installedAddonNames: Set<String>,
         selectedAddons: Set<String>,
         selectedPlugins: Set<String>,
+        prefer1080p: Boolean = false,
         preferredBingeGroup: String? = null,
         preferBingeGroupInSelection: Boolean = false,
         bingeGroupOnly: Boolean = false
@@ -100,7 +101,10 @@ object StreamAutoPlaySelector {
 
         return when (mode) {
             StreamAutoPlayMode.MANUAL -> null
-            StreamAutoPlayMode.FIRST_STREAM -> candidateStreams.firstOrNull { isPlayable(it) }
+            StreamAutoPlayMode.FIRST_STREAM -> firstPlayableStream(
+                streams = candidateStreams,
+                prefer1080p = prefer1080p
+            )
             StreamAutoPlayMode.REGEX_MATCH -> {
                 val pattern = regexPattern.trim()
  
@@ -146,9 +150,32 @@ object StreamAutoPlaySelector {
                 }
 
                 if (matchingStreams.isEmpty()) return null
-                matchingStreams.firstOrNull { isPlayable(it) }
+                firstPlayableStream(
+                    streams = matchingStreams,
+                    prefer1080p = prefer1080p
+                )
             }
 
         }
+    }
+
+    private fun firstPlayableStream(
+        streams: List<Stream>,
+        prefer1080p: Boolean
+    ): Stream? {
+        val playable = streams.filter(::isPlayable)
+        if (!prefer1080p) return playable.firstOrNull()
+        return playable.firstOrNull(::isLikely1080p) ?: playable.firstOrNull()
+    }
+
+    private fun isLikely1080p(stream: Stream): Boolean {
+        if (stream.qualityValue == 1080) return true
+        val searchableText = buildString {
+            append(stream.name.orEmpty()).append(' ')
+            append(stream.title.orEmpty()).append(' ')
+            append(stream.description.orEmpty()).append(' ')
+            append(stream.quality.orEmpty())
+        }
+        return Regex("""(?i)\b(1080p?|fhd)\b""").containsMatchIn(searchableText)
     }
 }
