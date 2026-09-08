@@ -30,18 +30,55 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      LOCAL_PROPERTIES_BASE64: ${{ secrets.LOCAL_PROPERTIES_BASE64 || secrets.NUVIO_LOCAL_PROPERTIES_BASE64 }}
-      LOCAL_DEV_PROPERTIES_BASE64: ${{ secrets.LOCAL_DEV_PROPERTIES_BASE64 || secrets.NUVIO_LOCAL_DEV_PROPERTIES_BASE64 }}
-      RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 || secrets.NUVIO_RELEASE_KEYSTORE_BASE64 }}
-      RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS || secrets.NUVIO_RELEASE_KEY_ALIAS }}
-      RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD || secrets.NUVIO_RELEASE_KEY_PASSWORD }}
-      RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD || secrets.NUVIO_RELEASE_STORE_PASSWORD }}
+      LEGACY_LOCAL_PROPERTIES_BASE64: ${{ secrets.LOCAL_PROPERTIES_BASE64 }}
+      NUVIO_LOCAL_PROPERTIES_BASE64: ${{ secrets.NUVIO_LOCAL_PROPERTIES_BASE64 }}
+      LEGACY_LOCAL_DEV_PROPERTIES_BASE64: ${{ secrets.LOCAL_DEV_PROPERTIES_BASE64 }}
+      NUVIO_LOCAL_DEV_PROPERTIES_BASE64: ${{ secrets.NUVIO_LOCAL_DEV_PROPERTIES_BASE64 }}
+      LEGACY_RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+      NUVIO_RELEASE_KEYSTORE_BASE64: ${{ secrets.NUVIO_RELEASE_KEYSTORE_BASE64 }}
+      LEGACY_RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+      NUVIO_RELEASE_KEY_ALIAS: ${{ secrets.NUVIO_RELEASE_KEY_ALIAS }}
+      LEGACY_RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      NUVIO_RELEASE_KEY_PASSWORD: ${{ secrets.NUVIO_RELEASE_KEY_PASSWORD }}
+      LEGACY_RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+      NUVIO_RELEASE_STORE_PASSWORD: ${{ secrets.NUVIO_RELEASE_STORE_PASSWORD }}
 
     steps:
       - name: Check out full history
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Resolve release secrets
+        run: |
+          write_env() {
+            local name="$1"
+            local value="$2"
+            local delimiter="EOF_$(openssl rand -hex 8)"
+            {
+              printf '%s<<%s\n' "${name}" "${delimiter}"
+              printf '%s\n' "${value}"
+              printf '%s\n' "${delimiter}"
+            } >> "${GITHUB_ENV}"
+          }
+
+          resolve_secret() {
+            local name="$1"
+            local legacy_value="$2"
+            local nuvio_value="$3"
+            local resolved_value="${legacy_value}"
+            if [[ -z "${resolved_value}" ]]; then
+              resolved_value="${nuvio_value}"
+            fi
+            write_env "${name}" "${resolved_value}"
+          }
+
+          resolve_secret LOCAL_PROPERTIES_BASE64 "${LEGACY_LOCAL_PROPERTIES_BASE64}" "${NUVIO_LOCAL_PROPERTIES_BASE64}"
+          resolve_secret LOCAL_DEV_PROPERTIES_BASE64 "${LEGACY_LOCAL_DEV_PROPERTIES_BASE64}" "${NUVIO_LOCAL_DEV_PROPERTIES_BASE64}"
+          resolve_secret RELEASE_KEYSTORE_BASE64 "${LEGACY_RELEASE_KEYSTORE_BASE64}" "${NUVIO_RELEASE_KEYSTORE_BASE64}"
+          resolve_secret RELEASE_KEY_ALIAS "${LEGACY_RELEASE_KEY_ALIAS}" "${NUVIO_RELEASE_KEY_ALIAS}"
+          resolve_secret RELEASE_KEY_PASSWORD "${LEGACY_RELEASE_KEY_PASSWORD}" "${NUVIO_RELEASE_KEY_PASSWORD}"
+          resolve_secret RELEASE_STORE_PASSWORD "${LEGACY_RELEASE_STORE_PASSWORD}" "${NUVIO_RELEASE_STORE_PASSWORD}"
 
       - name: Validate release tooling
         run: |
